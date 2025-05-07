@@ -152,13 +152,13 @@ func valueMasker(insecureSecrets bool, secrets map[string]string) entryProcessor
 		masks := Masks(entry.Context)
 
 		for _, v := range secrets {
-			if v != "" {
+			if strings.TrimSpace(v) != "" {
 				entry.Message = strings.ReplaceAll(entry.Message, v, "***")
 			}
 		}
 
 		for _, v := range *masks {
-			if v != "" {
+			if strings.TrimSpace(v) != "" {
 				entry.Message = strings.ReplaceAll(entry.Message, v, "***")
 			}
 		}
