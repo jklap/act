@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Build" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="act" />
+    <working_directory value="$PROJECT_DIR$" />
+    <go_parameters value="-o act -ldflags &quot;-X main.version=0.2.80-test&quot;" />
+    <kind value="PACKAGE" />
+    <package value="github.com/nektos/act" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <output_directory value="$PROJECT_DIR$" />
+    <option name="run" value="false" />
+    <method v="2">
+      <option name="GoBeforeRunTask" command="fmt ./..." />
+    </method>
+  </configuration>
+</component>
