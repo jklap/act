@@ -147,7 +147,7 @@ func captureOutput(t *testing.T, f func()) string {
 	return out
 }
 
-func TestAddmaskUsemask(t *testing.T) {
+func TestAddmaskCmdUsemask(t *testing.T) {
 	rc := new(RunContext)
 	rc.StepResults = make(map[string]*model.StepResult)
 	rc.CurrentStep = "my-step"
@@ -172,6 +172,90 @@ func TestAddmaskUsemask(t *testing.T) {
 	})
 
 	a.Equal("[testjob]   \U00002699  ***\n[testjob]   \U00002699  ::set-output:: = token=***\n", re)
+}
+
+func TestAddmaskUsemask(t *testing.T) {
+	rc := new(RunContext)
+	rc.StepResults = make(map[string]*model.StepResult)
+	rc.CurrentStep = "my-step"
+	rc.StepResults[rc.CurrentStep] = &model.StepResult{
+		Outputs: make(map[string]string),
+	}
+
+	a := assert.New(t)
+
+	config := &Config{
+		Secrets:         map[string]string{},
+		InsecureSecrets: false,
+	}
+
+	re := captureOutput(t, func() {
+		ctx := context.Background()
+		ctx = WithJobLogger(ctx, "0", "testjob", config, &rc.Masks, map[string]interface{}{})
+
+		rc.AddMask("secret")
+
+		handler := rc.commandHandler(ctx)
+		handler("::set-output:: token=secret\n")
+	})
+
+	a.Equal("[testjob]   \U00002699  ::set-output:: = token=***\n", re)
+}
+
+func TestAddmaskUsemaskEmpty(t *testing.T) {
+	rc := new(RunContext)
+	rc.StepResults = make(map[string]*model.StepResult)
+	rc.CurrentStep = "my-step"
+	rc.StepResults[rc.CurrentStep] = &model.StepResult{
+		Outputs: make(map[string]string),
+	}
+
+	a := assert.New(t)
+
+	config := &Config{
+		Secrets:         map[string]string{},
+		InsecureSecrets: false,
+	}
+
+	re := captureOutput(t, func() {
+		ctx := context.Background()
+		ctx = WithJobLogger(ctx, "0", "testjob", config, &rc.Masks, map[string]interface{}{})
+
+		rc.AddMask("")
+
+		handler := rc.commandHandler(ctx)
+		handler("::set-output:: token=secret\n")
+	})
+
+	a.Equal("[testjob]   \U00002699  ::set-output:: = token=secret\n", re)
+}
+
+func TestAddmaskUsemaskBlank(t *testing.T) {
+	rc := new(RunContext)
+	rc.StepResults = make(map[string]*model.StepResult)
+	rc.CurrentStep = "my-step"
+	rc.StepResults[rc.CurrentStep] = &model.StepResult{
+		Outputs: make(map[string]string),
+	}
+
+	a := assert.New(t)
+
+	config := &Config{
+		Secrets:         map[string]string{},
+		InsecureSecrets: false,
+	}
+
+	re := captureOutput(t, func() {
+		ctx := context.Background()
+		ctx = WithJobLogger(ctx, "0", "testjob", config, &rc.Masks, map[string]interface{}{})
+
+		rc.AddMask(" ")
+
+		handler := rc.commandHandler(ctx)
+		handler("::set-output:: token=secret\n")
+	})
+
+	a.Equal("[testjob]   \U00002699  ::set-output:: = token=secret\n", re)
 }
 
 func TestSaveState(t *testing.T) {
