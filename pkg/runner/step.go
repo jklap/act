@@ -1,8 +1,11 @@
 package runner
 
 import (
+	"archive/tar"
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"path"
 	"strconv"
 	"strings"
@@ -58,6 +61,42 @@ func processRunnerEnvFileCommand(ctx context.Context, fileName string, rc *RunCo
 	}
 	for k, v := range env {
 		setter(ctx, map[string]string{"name": k}, v)
+	}
+	return nil
+}
+
+func processRunnerSummary(ctx context.Context, stepModel *model.Step, stage stepStage, fileName string, rc *RunContext) error {
+	if common.Dryrun(ctx) {
+		return nil
+	}
+
+	logger := common.Logger(ctx)
+
+	ctx = withStepLogger(ctx, stepModel.ID, rc.ExprEval.Interpolate(ctx, stepModel.String()), stage.String())
+	rawLogger := common.Logger(ctx).WithField("raw_output", true)
+
+	pathTar, err := rc.JobContainer.GetContainerArchive(ctx, path.Join(rc.JobContainer.GetActPath(), fileName))
+	if err != nil {
+		return err
+	}
+	defer pathTar.Close()
+
+	reader := tar.NewReader(pathTar)
+	// go to the first file in the tar (should be only one)
+	_, err = reader.Next()
+	if err != nil && err != io.EOF {
+		return err
+	}
+
+	s := bufio.NewScanner(reader)
+	firstLine := true
+	for s.Scan() {
+		line := s.Text()
+		if firstLine {
+			firstLine = false
+			logger.Infof("  \U00002753  STEP_SUMMARY")
+		}
+		rawLogger.Infof("%s", line)
 	}
 	return nil
 }
@@ -137,7 +176,7 @@ func runStepExecutor(step step, stage stepStage, executor common.Executor) commo
 			Mode: 0o666,
 		}, &container.FileEntry{
 			Name: envFileCommand,
-			Mode: 0666,
+			Mode: 0o666,
 		}, &container.FileEntry{
 			Name: summaryFileCommand,
 			Mode: 0o666,
@@ -189,6 +228,10 @@ func runStepExecutor(step step, stage stepStage, executor common.Executor) commo
 			return err
 		}
 		err = rc.UpdateExtraPath(ctx, path.Join(actPath, pathFileCommand))
+		if err != nil {
+			return err
+		}
+		err = processRunnerSummary(ctx, stepModel, stepStagePost, summaryFileCommand, rc)
 		if err != nil {
 			return err
 		}

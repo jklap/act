@@ -1,0 +1,16 @@
+on: push
+jobs:
+  _:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: nektos/act-test-actions/script@main
+      with:
+        main: |
+          echo "## First task" >> $GITHUB_STEP_SUMMARY
+          echo "- line" >> $GITHUB_STEP_SUMMARY
+
+    - uses: nektos/act-test-actions/script@main
+      with:
+        main: |
+          echo "## Second task" >> $GITHUB_STEP_SUMMARY
+          echo "- line" >> $GITHUB_STEP_SUMMARY
